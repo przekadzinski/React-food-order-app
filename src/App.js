@@ -1,7 +1,16 @@
+import React from "react";
+
 import "./App.css";
 
-function App() {
-  return <div className="App">Hello World</div>;
-}
+import Header from "./components/Layout/Header";
+import Meals from "./components/Meals/Meals";
+const App = () => {
+  return (
+    <>
+      <Header />
+      <Meals />
+    </>
+  );
+};
 
 export default App;

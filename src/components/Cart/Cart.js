@@ -7,6 +7,8 @@ import Modal from "../UI/Modal";
 
 const Cart = ({ onClose }) => {
   const [isCheckout, setIsCheckout] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [didSubmit, setDidSubmit] = useState(false);
   const cartCtx = useContext(CartContext);
   const cartItemRemoveHandler = (id) => {
     cartCtx.removeItem(id);
@@ -16,7 +18,9 @@ const Cart = ({ onClose }) => {
     cartCtx.addItem({ ...item, amount: 1 });
   };
 
-  const totalAmount = `$${cartCtx.totalAmount.toFixed(2)}`;
+  const totalAmount = `$${
+    cartCtx.totalAmount && cartCtx.totalAmount.toFixed(2)
+  }`;
   const hasItems = cartCtx.items.length > 0;
   const cartItems = cartCtx.items.map((item) => (
     <CartItem
@@ -31,14 +35,21 @@ const Cart = ({ onClose }) => {
   const orderHandler = () => {
     setIsCheckout(true);
   };
-  const submitOrderHandler = (userData) => {
-    fetch("https://foodapp-221e8-default-rtdb.firebaseio.com/orders.json", {
-      method: "POST",
-      body: JSON.stringify({
-        user: userData,
-        orderedItems: cartCtx.item,
-      }),
-    });
+  const submitOrderHandler = async (userData) => {
+    setIsSubmitting(true);
+    await fetch(
+      "https://foodapp-221e8-default-rtdb.firebaseio.com/orders.json",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          user: userData,
+          orderedItems: cartCtx.item,
+        }),
+      }
+    );
+    setIsSubmitting(false);
+    setDidSubmit(true);
+    cartCtx.clearCart();
   };
   const modalActions = (
     <div className={styles.actions}>
@@ -53,8 +64,9 @@ const Cart = ({ onClose }) => {
     </div>
   );
 
-  return (
-    <Modal onClose={onClose}>
+  const cartModalContent = (
+    <>
+      {" "}
       <ul className={styles["cart-items"]}>{cartItems}</ul>
       <div className={styles.total}>
         <span>Total amount</span>
@@ -64,6 +76,26 @@ const Cart = ({ onClose }) => {
         <Checkout onConfirm={submitOrderHandler} onCancel={onClose} />
       )}
       {!isCheckout && modalActions}
+    </>
+  );
+
+  const isSubmittingModalContent = <p>Sending order data...</p>;
+  const didSubmitModalcontent = (
+    <>
+      <p>Successfully sent the order!</p>
+      <div className={styles.actions}>
+        <button className={styles.button} onClick={onClose}>
+          Close
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <Modal onClose={onClose}>
+      {!isSubmitting && !didSubmit && cartModalContent}
+      {isSubmitting && isSubmittingModalContent}
+      {!isSubmitting && didSubmit && didSubmitModalcontent}
     </Modal>
   );
 };

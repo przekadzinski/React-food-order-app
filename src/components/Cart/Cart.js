@@ -1,10 +1,12 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import styles from "./Cart.module.css";
 import CartContext from "../../store/cart-context";
 import CartItem from "./CartItem";
+import Checkout from "./Checkout";
 import Modal from "../UI/Modal";
 
 const Cart = ({ onClose }) => {
+  const [isCheckout, setIsCheckout] = useState(false);
   const cartCtx = useContext(CartContext);
   const cartItemRemoveHandler = (id) => {
     cartCtx.removeItem(id);
@@ -26,6 +28,30 @@ const Cart = ({ onClose }) => {
       onAdd={cartItemAddHandler.bind(null, item)}
     />
   ));
+  const orderHandler = () => {
+    setIsCheckout(true);
+  };
+  const submitOrderHandler = (userData) => {
+    fetch("https://foodapp-221e8-default-rtdb.firebaseio.com/orders.json", {
+      method: "POST",
+      body: JSON.stringify({
+        user: userData,
+        orderedItems: cartCtx.item,
+      }),
+    });
+  };
+  const modalActions = (
+    <div className={styles.actions}>
+      <button className={styles["button--alt"]} onClick={onClose}>
+        Close
+      </button>
+      {hasItems && (
+        <button className={styles.button} onClick={orderHandler}>
+          Order
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <Modal onClose={onClose}>
@@ -34,12 +60,10 @@ const Cart = ({ onClose }) => {
         <span>Total amount</span>
         <span>{totalAmount}</span>
       </div>
-      <div className={styles.actions}>
-        <button className={styles["button--alt"]} onClick={onClose}>
-          Close
-        </button>
-        {hasItems && <button className={styles.button}>Order</button>}
-      </div>
+      {isCheckout && (
+        <Checkout onConfirm={submitOrderHandler} onCancel={onClose} />
+      )}
+      {!isCheckout && modalActions}
     </Modal>
   );
 };
